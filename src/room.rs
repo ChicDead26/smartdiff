@@ -4,6 +4,7 @@ use crate::{
 };
 use anyhow::{Context, Result};
 use std::path::Path;
+use image::{DynamicImage, imageops};
 
 type Color = [u8; 3];
 
@@ -332,12 +333,24 @@ pub fn render_room<F: FileSystem>(
 
         let mut layer1 = Image::new(width, height);
         render_screens(&state_xml.level_data.layer_1.screen, &mut layer1, &tileset);
-        layer1_list.push(layer1);
+        layer1_list.push(layer1.clone());
 
         let mut layer2 = Image::new(width, height);
         render_bgdata(&state_xml.bg_data, &mut layer2, &tileset)?;
         render_screens(&state_xml.level_data.layer_2.screen, &mut layer2, &tileset);
-        layer2_list.push(layer2);
+        layer2_list.push(layer2.clone());
+
+        //save_room_as_png(layer2.pixels, layer1.pixels, width, height)
+
+//        let buffer1: &[u8] = &layer2.pixels;
+//        let buffer2: &[u8] = &layer1.pixels;
+
+//        image::save_buffer("image1.png", buffer1, width as u32, height as u32, image::ExtendedColorType::Rgba8).unwrap();
+//        image::save_buffer("image2.png", buffer2, width as u32, height as u32, image::ExtendedColorType::Rgba8).unwrap();
+
+//        h_concat(image::open("image1.png").unwrap(), &[
+//       image::open("image2.png").unwrap()
+//        ]).save("overlay.png").unwrap();
     }
     Ok(RoomImages {
         room_state_names: room_state_name_list,
@@ -345,3 +358,27 @@ pub fn render_room<F: FileSystem>(
         layer2: layer2_list,
     })
 }
+
+fn h_concat(mut base: DynamicImage, imgs: &[DynamicImage]) -> DynamicImage {//i didnt look it dynamicimage but it wont work without it
+  for img in imgs {
+    imageops::overlay(&mut base, img, 0, 0);
+  }
+  base
+}
+
+use crate::State;
+use crate::LocalFileSystem;
+
+pub fn save_room_as_png(state: &mut State)-> Result<(), Box<dyn std::error::Error>>{//(buffer1: Vec<u8>, buffer2: Vec<u8>, width: usize, height: usize){
+        let working_fs = LocalFileSystem {};
+        let roomba = render_room(&state.project.0, &state.room, &working_fs)?;
+
+        image::save_buffer("layer1.png", &roomba.layer1[0].pixels, roomba.layer1[0].width as u32, roomba.layer1[0].height as u32, image::ExtendedColorType::Rgba8).unwrap();
+        image::save_buffer("layer2.png", &roomba.layer2[0].pixels, roomba.layer2[0].width as u32, roomba.layer2[0].height as u32, image::ExtendedColorType::Rgba8).unwrap();
+
+        h_concat(image::open("layer2.png").unwrap(), &[
+        image::open("layer1.png").unwrap()
+        ]).save(&format!("{}.png", &state.room)).unwrap();
+        Ok(())
+}
+

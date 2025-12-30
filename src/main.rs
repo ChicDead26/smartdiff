@@ -11,7 +11,7 @@ use hashbrown::HashMap;
 use iced::{
     Element, Font, Length, Point, Rectangle, Size, Subscription, Task, Theme, keyboard,
     widget::{
-        Scrollable, canvas, checkbox, column, combo_box, image, pick_list, row,
+        Scrollable, canvas, checkbox, button, column, combo_box, image, pick_list, row,
         scrollable::{self, Scrollbar},
         slider, text,
     },
@@ -24,6 +24,7 @@ use crate::{
     file_system::{GitTreeFileSystem, LocalFileSystem},
     room::RoomImages,
 };
+use crate::room::save_room_as_png;
 
 pub const MIN_PIXEL_SIZE: f32 = 1.0;
 pub const MAX_PIXEL_SIZE: f32 = 8.0;
@@ -128,6 +129,8 @@ enum Message {
     SelectSource(SourceSelection),
     ShowLayer1(bool),
     ShowLayer2(bool),
+    SaveRoom,
+    SaveEveryRoom,
     HighlightTransparency(bool),
     AdjustDifferenceBaseline(f32),
     SelectModifiedRoom(usize),
@@ -355,6 +358,8 @@ fn refresh_room_images(state: &mut State) -> Result<()> {
     drop(other_fs);
     refresh_diff_images(state)?;
     Ok(())
+
+    //let buffer: &[u8] = state.working_images.layer1;
 }
 
 fn try_update(state: &mut State, message: Message) -> Result<Task<Message>> {
@@ -439,6 +444,20 @@ fn try_update(state: &mut State, message: Message) -> Result<Task<Message>> {
         }
         Message::ShowLayer2(b) => {
             state.show_layer_2 = b;
+        }
+        Message::SaveRoom => {
+            //println!("fuck fuck fuck fuck");
+            //refresh_room_images(&mut state)?;
+            save_room_as_png(state);
+        }
+        Message::SaveEveryRoom => {
+            //let rooms = &state.room_list;
+            for rooma in state.room_list.options().into_iter().cloned(){
+                state.room = rooma.to_string();
+                println!("{}", state.room);
+                save_room_as_png(state);
+            }
+            //println!("{}", state.room);
         }
         Message::HighlightTransparency(b) => {
             state.highlight_transparency = b;
@@ -543,7 +562,7 @@ impl<'a> canvas::Program<Message> for RoomCanvas<'a> {
     }
 }
 
-fn view(state: &State) -> Element<Message> {
+fn view(state: &State) -> Element<'_, Message> {
     let controls = column![
         combo_box(
             &state.project_list,
@@ -561,6 +580,11 @@ fn view(state: &State) -> Element<Message> {
         row![
             checkbox("Show layer 1", state.show_layer_1).on_toggle(Message::ShowLayer1),
             checkbox("Show layer 2", state.show_layer_2).on_toggle(Message::ShowLayer2),
+        ]
+        .spacing(10),
+        row![
+            button("Save Room as PNG").on_press(Message::SaveRoom),//.into()
+            button("Save Every Room as PNG").on_press(Message::SaveEveryRoom),
         ]
         .spacing(10),
         checkbox("Highlight transparency", state.highlight_transparency)
@@ -648,3 +672,10 @@ fn main() -> Result<()> {
 
     Ok(())
 }
+
+//fn test(state: &mut State) -> Result<()>{
+//    let working_fs = LocalFileSystem {};
+    //let buffer: &[u8] = state.working_images.layer1;//render_room(&state.project.0, &state.room, &working_fs)?;
+
+    //buffer.save("test.png").unwrap();
+//}
