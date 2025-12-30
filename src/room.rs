@@ -368,17 +368,20 @@ fn h_concat(mut base: DynamicImage, imgs: &[DynamicImage]) -> DynamicImage {//i 
 
 use crate::State;
 use crate::LocalFileSystem;
+use std::fs;
 
-pub fn save_room_as_png(state: &mut State)-> Result<(), Box<dyn std::error::Error>>{//(buffer1: Vec<u8>, buffer2: Vec<u8>, width: usize, height: usize){
+pub fn save_room_as_png(state: &State)-> Result<(), Box<dyn std::error::Error>>{//(buffer1: Vec<u8>, buffer2: Vec<u8>, width: usize, height: usize){
         let working_fs = LocalFileSystem {};
-        let roomba = render_room(&state.project.0, &state.room, &working_fs)?;
+        let current_room = render_room(&state.project.0, &state.room, &working_fs)?;
 
-        image::save_buffer("layer1.png", &roomba.layer1[0].pixels, roomba.layer1[0].width as u32, roomba.layer1[0].height as u32, image::ExtendedColorType::Rgba8).unwrap();
-        image::save_buffer("layer2.png", &roomba.layer2[0].pixels, roomba.layer2[0].width as u32, roomba.layer2[0].height as u32, image::ExtendedColorType::Rgba8).unwrap();
+        image::save_buffer("layer1.png", &current_room.layer1[0].pixels, current_room.layer1[0].width as u32, current_room.layer1[0].height as u32, image::ExtendedColorType::Rgba8).unwrap();
+        image::save_buffer("layer2.png", &current_room.layer2[0].pixels, current_room.layer2[0].width as u32, current_room.layer2[0].height as u32, image::ExtendedColorType::Rgba8).unwrap();
+
+        fs::create_dir_all(&format!("./Room Images/{}", &state.project))?;
 
         h_concat(image::open("layer2.png").unwrap(), &[
         image::open("layer1.png").unwrap()
-        ]).save(&format!("{}.png", &state.room)).unwrap();
+        ]).save(&format!("Room Images/{}/{}.png", &state.project, &state.room)).unwrap();
         Ok(())
 }
 

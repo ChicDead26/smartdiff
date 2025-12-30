@@ -451,9 +451,17 @@ fn try_update(state: &mut State, message: Message) -> Result<Task<Message>> {
             save_room_as_png(state);
         }
         Message::SaveEveryRoom => {
-            //let rooms = &state.room_list;
-            for rooma in state.room_list.options().into_iter().cloned(){
-                state.room = rooma.to_string();
+            let rooms = &state.room_list;
+            for current_room in rooms.options(){//state.room_list.options().into_iter().cloned(){
+                if current_room.to_string() == "CERES COMPUTER ROOM"
+                || current_room.to_string() == "CERES 58 ESCAPE"
+                || current_room.to_string() == "CERES FALLING TILE ROOM"
+                || current_room.to_string() == "CERES RIDLEY BOSS ROOM"
+                || current_room.to_string() == "CERES SHAFT"
+                || current_room.to_string() == "CERES STAIRS ROOM"{
+                    continue;
+                }
+                state.room = current_room.to_string();
                 println!("{}", state.room);
                 save_room_as_png(state);
             }
